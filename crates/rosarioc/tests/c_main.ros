@@ -1,0 +1,14 @@
+use core::*;
+
+use C_LANG("stdio.h");
+
+procedure Main() is
+begin
+    let a: Int32 = 2;
+    let b: Int32 = 2;
+    let c: Int32 = a + b;
+
+    let enum_test: Option<Int32> = Option<Int32>::Some(36);
+
+    C_LANG printf("%i\n", enum_test.kind);
+end Main;

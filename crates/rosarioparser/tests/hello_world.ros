@@ -1,0 +1,4 @@
+procedure Main() is
+begin
+    Print_Line("Hello, World!");
+end Main;

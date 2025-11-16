@@ -1,0 +1,24 @@
+-- # Basic Types.
+--
+-- ## The core of all the basic types in Rosario.
+
+public type Int8 is range -(2 ** 7)..+(2 ** 7 - 1);
+public type Int16 is range -(2 ** 15)..+(2 ** 15 - 1);
+public type Int32 is range -(2 ** 31)..+(2 ** 31 - 1);
+public type Int64 is range -(2 ** 63)..+(2 ** 63 - 1);
+
+public type UInt8 is range 0..2 ** 8 - 1;
+public type UInt16 is range 0..2 ** 16 - 1;
+public type UInt32 is range 0..2 ** 32 - 1;
+public type UInt64 is range 0..2 ** 64 - 1;
+
+-- TODO: Make it architechture specific.
+-- For now it'll be `Int32` and `UInt32`.
+public type Integer is Int32;
+public type UInteger is UInt32;
+
+public type Bool is
+enum
+    False,
+    True,
+end Bool;

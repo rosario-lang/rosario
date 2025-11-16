@@ -1,0 +1,63 @@
+use library::basic_types::*;
+
+public type Option<T> is
+enum
+    None,
+    Some(T),
+end Option;
+
+implement Option<T>
+    public function Is_Some(self) => Bool is
+    match self is
+        None => False,
+        Some(_) => True,
+    end Is_Some;
+
+    public function Is_None(self) => Bool is !self.Is_Some();
+
+    public function Unwrap(self) => T is
+    match self is
+        None => Panic("Option is `None`"),
+        Some(value) => value,
+    end Unwrap;
+
+    public function Mutable_Unwrap(mutable self) => mutable T is
+    match self is
+        None => Panic("Option is `None`"),
+        Some(value) => value,
+    end Mutable_Unwrap;
+
+    public operator "?"(self) => T is self.Unwrap();
+    public mutable operator "?"(mutable self) => mutable T is self.Mutable_Unwrap();
+end implement;
+
+public type Result<T, E> is
+enum
+    Error(E),
+    Ok(T),
+end Result;
+
+implement Result<T, E>
+    public function Is_Ok(self) => Bool is
+    match self is
+        Error(_) => False,
+        Ok(_) => True,
+    end Is_Ok;
+
+    public function Is_Error(self) => Bool is !self.Is_Ok();
+
+    public function Unwrap(self) => T is
+    match self is
+        Error(error) => Panic("Error found!"), -- TODO: Add Display/Debug trait.
+        Ok(value) => value,
+    end Unwrap;
+
+    public function Mutable_Unwrap(mutable self) => mutable T is
+    match self is
+        Error(error) => Panic("Error found!"), -- TODO: Add Display/Debug trait.
+        Ok(value) => value,
+    end Mutable_Unwrap;
+
+    public operator "?"(self) => T is self.Unwrap();
+    public mutable operator "?"(mutable self) => mutable T is self.Mutable_Unwrap();
+end implement;

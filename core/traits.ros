@@ -1,0 +1,22 @@
+public trait Number;
+public trait Positive;
+
+public trait Single;
+
+public trait Container is
+    function Length(self) => UInteger;
+end Container;
+
+public trait Copy;
+
+public trait Clone is
+    function Clone(self) => Self;
+end Clone;
+
+public trait Drop is
+    procedure Drop(mutable self);
+end Drop;
+
+public trait Default is
+    function Default() => Self;
+end Default;
