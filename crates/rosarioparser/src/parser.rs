@@ -3,7 +3,7 @@ use std::{collections::BTreeMap, path::Path};
 use crate::{
     ast::{
         Argument, ArgumentType, Body, Condition, ConditionType, Enum, EnumArgument, Expression,
-        File, Function, FunctionCall, Generic, GenericEnd, If, IsMutable, Let, Match, MatchOption,
+        Function, FunctionCall, Generic, GenericEnd, If, IsMutable, Let, Match, MatchOption,
         NewEnum, Operator, Package, ParsedResult, Procedure, Range, ReturnType, RosarioType,
         RosarioTypeContent, RosarioTypeImplementation, RosarioTypeSignature, Signature,
     },

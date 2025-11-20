@@ -193,7 +193,12 @@ impl Lexer {
     }
 
     pub fn from_file(path: &str) -> Self {
-        Lexer::from(std::fs::read(path).unwrap(), path.to_string())
+        let content = match std::fs::read(path) {
+            Ok(p) => p,
+            Err(error) => panic!("Error at opening {:?}: {}", Path::new(path), error),
+        };
+
+        Lexer::from(content, path.to_string())
     }
 
     pub fn advance(&mut self) -> u8 {

@@ -521,7 +521,11 @@ impl CCompiler {
             }
             Expression::Let(let_var) => {
                 result += &format!(
-                    "{} {} = {}",
+                    "{}{} {} = {}",
+                    match let_var.is_mutable {
+                        true => "",
+                        false => "const ",
+                    },
                     match self.find_type_by_signature(let_var.ty.clone(), types) {
                         TypeSearch::Found(pkg, st) => format!("{}_{}", pkg, st),
                         _ => panic!("Type {} not found", let_var.name),

@@ -10,5 +10,5 @@ begin
 
     let enum_test: Option<Int32> = Option<Int32>::Some(36);
 
-    C_LANG printf("%i\n", enum_test.kind);
+    C_LANG printf("%li\n", c);
 end Main;

@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub enum Expression {

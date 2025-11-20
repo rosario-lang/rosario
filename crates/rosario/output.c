@@ -55,7 +55,7 @@ typedef struct {
 } c_main_Option_Int32;
 
 c_main_Option_Int32 New_c_main_Option_Int32_None() {
-    c_main_Option_Int32 result = { .kind = C_MAIN_OPTION_INT32_NONE, };
+    c_main_Option_Int32 result = { .kind = C_MAIN_OPTION_INT32_NONE,  };
     return result;
 }
 c_main_Option_Int32 New_c_main_Option_Int32_Some(core_basic_types_Int32 v0) {
@@ -64,10 +64,10 @@ c_main_Option_Int32 New_c_main_Option_Int32_Some(core_basic_types_Int32 v0) {
 }
 
 void c_main_Main() {
-    core_basic_types_Int32 a = 2;
-    core_basic_types_Int32 b = 2;
-    core_basic_types_Int32 c = a + b;
-    c_main_Option_Int32 enum_test = New_c_main_Option_Int32_Some(36);
+    const core_basic_types_Int32 a = 2;
+    const core_basic_types_Int32 b = 2;
+    const core_basic_types_Int32 c = a + b;
+    const c_main_Option_Int32 enum_test = New_c_main_Option_Int32_Some(36);
     {
         printf("%li\n", c);
     }

@@ -1,0 +1,117 @@
+use library::basic_types::*;
+
+use C_LANG("stdlib.h");
+use C_LANG("string.h");
+
+public trait Access<T> is
+    function New() => Self;
+    function From(content: T) => Self;
+    function From_Pointer(pointer: *T, length: NonZeroInt) => Self;
+
+    procedure Free(mutable self);
+    function Unwrap() => T;
+end Access;
+
+-- # Single Access.
+--
+-- ## A "safe pointer" used for heap allocated and foreign variables and structures.
+public type SingleAccess<T: Single + Default> is
+enum
+    None,
+    Some(*T),
+end SingleAccess;
+
+implement Access<T> for SingleAccess<T>
+    function New() => Self is Self::From(T::Default());
+
+    function From(content: T) => Self is
+    begin
+        let result: *T = C_LANG malloc(size_of T);
+        C_LANG memcpy(result, content, size_of T);
+
+        return Self::Some(result);
+    end From;
+
+    function From_Pointer(pointer: *T, length: NonZeroInt) => Self is
+    begin
+        if length != 1 then
+            Panic("Single Access should always have a length of 1");
+        end if;
+
+        return Self::Some(pointer, length);
+    end From_Pointer;
+
+    procedure Free(mutable self) is
+    begin
+        match self is
+            None => begin end,
+            Some(pointer) => C_LANG free(self),
+        end match;
+
+        self = Self::None;
+    end Free;
+
+    function Unwrap(self) => T is
+    match self is
+        None => Panic("SingleAccess is `None`"),
+        Some(pointer) => pointer,
+    end Unwrap;
+end implement;
+
+implement Drop for SingleAccess
+    procedure Drop(mutable self) is self.Free();
+end Drop;
+
+-- # Container Access.
+--
+-- ## A "safe pointer" used for heap allocated and foreign groups (arrays, vectors, etc.).
+pub type ContainerAccess<T: Single + Default> is
+enum
+    None,
+    Some(*T, NonZeroInt),
+end ContainerAccess;
+
+implement Access<T> for ContainerAccess<T>
+    function New() => Self is Self::From(T::Default());
+
+    function From<C: Container>(content: C<T>) => Self is
+    begin
+        let size: NonZeroInt = content.Length()
+            as balanced NonZeroInt * size_of T;
+
+        let result: *T = C_LANG malloc(size);
+        C_LANG memcpy(result, content, size);
+
+        return Self::Some(result, size);
+    end From;
+
+    function From_Pointer(pointer: *T, length: NonZeroInt) => Self is
+        Self::Some(pointer, length as balanced UInteger * size_of T);
+
+    procedure Free(mutable self) is
+        match self is
+            None => begin end,
+            Some(pointer, _) => C_LANG free(self),
+        end match;
+
+        self = Self::None;
+    end Free;
+
+    function Unwrap(self) => T is
+    match self is
+        None => Panic("ContainerAccess is `None`"),
+        Some(pointer) => pointer,
+    end Unwrap;
+end implement;
+
+implement Drop for ContainerAccess
+    procedure Drop(mutable self) is self.Free();
+end implement;
+
+implement Container for ContainerAccess
+    function Length(self) => UInteger is
+    match self is
+        None => 0,
+        Some(_, length) => length as balanced UInteger,
+    end Length;
+end implement;
