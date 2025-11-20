@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 
 use rosarioparser::{
     ast::{
-        ArgumentType, EnumArgument, Expression, Package, ReturnType, RosarioType,
-        RosarioTypeContent, RosarioTypeSignature, Signature,
+        ArgumentType, EnumArgument, Expression, Package, ReturnType, RosarioType, Signature,
+        TypeContent, TypeSignature,
     },
     parser::Parser,
 };
@@ -95,7 +95,7 @@ pub struct CEnum {
 pub enum CType {
     Integer(CInteger),
     Enum(CEnum),
-    TypeDef(RosarioTypeSignature),
+    TypeDef(TypeSignature),
 }
 
 pub struct CSignature {
@@ -293,7 +293,7 @@ impl CType {
 pub struct PackageTypes {
     pub package_name: String,
     pub dependencies: Vec<String>,
-    pub types: BTreeMap<RosarioTypeSignature, CType>,
+    pub types: BTreeMap<TypeSignature, CType>,
 }
 
 #[derive(Debug, Clone)]
@@ -322,7 +322,7 @@ impl CCompiler {
 
     pub fn codegen_type(&self, ty: RosarioType, types: &Vec<PackageTypes>) -> CType {
         match ty.content {
-            RosarioTypeContent::Range(range) => {
+            TypeContent::Range(range) => {
                 let left = Self::get_static_constant_number(&range.left);
                 let right = Self::get_static_constant_number(&range.right);
 
@@ -335,7 +335,7 @@ impl CCompiler {
                     limit_right: right,
                 })
             }
-            RosarioTypeContent::Enum(enumerable) => CType::Enum(CEnum {
+            TypeContent::Enum(enumerable) => CType::Enum(CEnum {
                 items: {
                     let mut result = vec![];
 
@@ -358,7 +358,7 @@ impl CCompiler {
                     dbg!(result)
                 },
             }),
-            RosarioTypeContent::TypeRef(reference) => CType::TypeDef(reference),
+            TypeContent::TypeRef(reference) => CType::TypeDef(reference),
             _ => todo!("{:?}", ty),
         }
     }
@@ -428,7 +428,7 @@ impl CCompiler {
 
     pub fn find_type_by_signature(
         &self,
-        name: RosarioTypeSignature,
+        name: TypeSignature,
         types: &Vec<PackageTypes>,
     ) -> TypeSearch {
         for ty in types {
@@ -444,7 +444,7 @@ impl CCompiler {
 
     pub fn find_type_content_by_signature(
         &self,
-        name: RosarioTypeSignature,
+        name: TypeSignature,
         types: &Vec<PackageTypes>,
     ) -> CType {
         for ty in types {

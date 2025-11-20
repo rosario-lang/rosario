@@ -3,9 +3,10 @@ use std::{collections::BTreeMap, path::Path};
 use crate::{
     ast::{
         Argument, ArgumentType, Body, Condition, ConditionType, Enum, EnumArgument, Expression,
-        Function, FunctionCall, Generic, GenericEnd, If, IsMutable, Let, Match, MatchOption,
-        NewEnum, Operator, Package, ParsedResult, Procedure, Range, ReturnType, RosarioType,
-        RosarioTypeContent, RosarioTypeImplementation, RosarioTypeSignature, Signature,
+        Function, FunctionCall, Generic, GenericEnd, If, ImplSignature, IsMutable, Let, Match,
+        MatchOption, NewEnum, Operator, Package, ParsedResult, Procedure, Range, ReturnType,
+        RosarioType, Signature, Trait, TraitSignature, TypeContent, TypeImplementation,
+        TypeSignature,
     },
     lexer::{Lexer, Token, TokenType},
 };
@@ -99,7 +100,7 @@ impl Parser {
         Enum { contents }
     }
 
-    pub fn parse_type_signature(&mut self) -> RosarioTypeSignature {
+    pub fn parse_type_signature(&mut self) -> TypeSignature {
         let name = self.get_identifier();
 
         self.token_pos += 1;
@@ -138,14 +139,14 @@ impl Parser {
             self.token_pos -= 1;
         }
 
-        RosarioTypeSignature { name, generics }
+        TypeSignature { name, generics }
     }
 
     pub fn parse_type(
         &mut self,
-        public_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
-        local_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
-    ) -> (RosarioTypeSignature, RosarioType) {
+        public_types: &BTreeMap<TypeSignature, RosarioType>,
+        local_types: &BTreeMap<TypeSignature, RosarioType>,
+    ) -> (TypeSignature, RosarioType) {
         self.token_pos += 1;
 
         let signature = self.parse_type_signature();
@@ -157,17 +158,15 @@ impl Parser {
         self.token_pos += 1;
 
         let content = match &self.current_token().ty {
-            TokenType::Range => {
-                RosarioTypeContent::Range(self.parse_range(public_types, local_types))
-            }
-            TokenType::Modulo => RosarioTypeContent::Modulo({
+            TokenType::Range => TypeContent::Range(self.parse_range(public_types, local_types)),
+            TokenType::Modulo => TypeContent::Modulo({
                 self.token_pos += 1;
                 self.parse_expression(None, None, public_types, local_types)
             }),
-            TokenType::Enum => RosarioTypeContent::Enum(
+            TokenType::Enum => TypeContent::Enum(
                 self.parse_enum(Some(signature.name.clone()), &signature.generics),
             ),
-            TokenType::Identifier(_) => RosarioTypeContent::TypeRef(self.parse_type_signature()),
+            TokenType::Identifier(_) => TypeContent::TypeRef(self.parse_type_signature()),
             _ => todo!("{:?}", self.current_token().ty),
         };
 
@@ -193,8 +192,8 @@ impl Parser {
 
     pub fn parse_range(
         &mut self,
-        public_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
-        local_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
+        public_types: &BTreeMap<TypeSignature, RosarioType>,
+        local_types: &BTreeMap<TypeSignature, RosarioType>,
     ) -> Range {
         self.token_pos += 1;
 
@@ -376,7 +375,13 @@ impl Parser {
                 TokenType::Implement => {
                     let implem =
                         self.parse_implementation(&main.file.public_types, &main.file.types);
-                    main.file.implementations.insert(implem.0, implem.1);
+                    main.file.implementations.insert(
+                        ImplSignature {
+                            impl_of: None,
+                            impl_for: implem.0,
+                        },
+                        implem.1,
+                    );
                 }
                 TokenType::Trait => {
                     self.token_pos += 1;
@@ -492,7 +497,7 @@ impl Parser {
             let types = &mut package.file.types;
             'types_loop: for (_, ty) in types {
                 match &mut ty.content {
-                    RosarioTypeContent::Range(range) => {
+                    TypeContent::Range(range) => {
                         let left = Self::solve_expression_to_number(&range.left);
                         let right = Self::solve_expression_to_number(&range.right);
 
@@ -513,7 +518,7 @@ impl Parser {
             let public_types = &mut package.file.public_types;
             'types_loop: for (_, ty) in public_types {
                 match &mut ty.content {
-                    RosarioTypeContent::Range(range) => {
+                    TypeContent::Range(range) => {
                         let left = Self::solve_expression_to_number(&range.left);
                         let right = Self::solve_expression_to_number(&range.right);
 
@@ -533,8 +538,8 @@ impl Parser {
         }
     }
 
-    pub fn get_solved_generic_type_signature(ty: &RosarioTypeSignature) -> RosarioTypeSignature {
-        RosarioTypeSignature {
+    pub fn get_solved_generic_type_signature(ty: &TypeSignature) -> TypeSignature {
+        TypeSignature {
             name: format!("{}_{}", ty.name, {
                 let mut result = String::new();
 
@@ -549,8 +554,8 @@ impl Parser {
         }
     }
 
-    pub fn get_solved_generics(expr: &mut Expression) -> Vec<RosarioTypeSignature> {
-        let mut result: Vec<RosarioTypeSignature> = vec![];
+    pub fn get_solved_generics(expr: &mut Expression) -> Vec<TypeSignature> {
+        let mut result: Vec<TypeSignature> = vec![];
         match expr {
             Expression::Body(body) => {
                 for i in &mut body.content {
@@ -580,9 +585,9 @@ impl Parser {
     }
 
     pub fn convert_to_solved_type(
-        original_signature: &RosarioTypeSignature,
+        original_signature: &TypeSignature,
         original_type: &RosarioType,
-        solved_signature: &RosarioTypeSignature,
+        solved_signature: &TypeSignature,
     ) -> RosarioType {
         let mut convert_to: BTreeMap<String, String> = BTreeMap::new();
         let mut count = 0;
@@ -597,7 +602,7 @@ impl Parser {
         RosarioType {
             traits: original_type.traits.clone(),
             content: match &original_type.content {
-                RosarioTypeContent::Enum(enumerable) => {
+                TypeContent::Enum(enumerable) => {
                     let mut final_enumerable = enumerable.clone();
 
                     for (_, enum_arguments) in &mut final_enumerable.contents {
@@ -608,7 +613,7 @@ impl Parser {
                                     for (from, to) in &convert_to {
                                         if from == generic {
                                             final_enum_argument =
-                                                EnumArgument::Type(RosarioTypeSignature {
+                                                EnumArgument::Type(TypeSignature {
                                                     name: to.clone(),
                                                     generics: vec![],
                                                 });
@@ -624,7 +629,7 @@ impl Parser {
                         }
                     }
 
-                    RosarioTypeContent::Enum(final_enumerable)
+                    TypeContent::Enum(final_enumerable)
                 }
                 _ => todo!(),
             },
@@ -632,7 +637,7 @@ impl Parser {
     }
 
     pub fn generic_solver_pass(&mut self) {
-        let mut solved_generics: BTreeMap<String, Vec<RosarioTypeSignature>> = BTreeMap::new();
+        let mut solved_generics: BTreeMap<String, Vec<TypeSignature>> = BTreeMap::new();
         for (name, package) in &mut self.result.packages {
             for procedure in &mut package.file.procedures {
                 let content = Self::get_solved_generics(&mut procedure.body);
@@ -691,21 +696,55 @@ impl Parser {
 
         self.generic_solver_pass();
 
+        self.implicit_function_pass();
+
         self.static_number_solver_pass();
+    }
+
+    pub fn implicit_function_pass(&mut self) {
+        for i in &mut self.result.packages {
+            for (signature, ty) in &i.1.file.public_types {
+                match &ty.content {
+                    TypeContent::Range(range) => {
+                        let mut range_trait =
+                            i.1.file
+                                .implementations
+                                .entry(ImplSignature {
+                                    impl_of: Some(Self::find_trait_by_name(
+                                        "Range",
+                                        &i.1.file.traits,
+                                        &i.1.file.public_traits,
+                                    )),
+                                    impl_for: signature.clone(),
+                                })
+                                .or_insert(TypeImplementation::default());
+                    }
+                    _ => todo!(),
+                }
+            }
+        }
+    }
+
+    pub fn find_trait_by_name(
+        tr: &str,
+        traits: &BTreeMap<TraitSignature, Trait>,
+        public_traits: &BTreeMap<TraitSignature, Trait>,
+    ) -> TraitSignature {
+        todo!()
     }
 
     pub fn parse_implementation(
         &mut self,
-        public_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
-        local_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
-    ) -> (RosarioTypeSignature, RosarioTypeImplementation) {
+        public_types: &BTreeMap<TypeSignature, RosarioType>,
+        local_types: &BTreeMap<TypeSignature, RosarioType>,
+    ) -> (TypeSignature, TypeImplementation) {
         self.token_pos += 1;
 
         let signature = self.parse_type_signature();
 
         self.token_pos += 1;
 
-        let mut implementation = RosarioTypeImplementation::default();
+        let mut implementation = TypeImplementation::default();
         let mut is_public = false;
         let mut is_mutable_operator = false;
         while self.current_token().ty != TokenType::End {
@@ -783,8 +822,8 @@ impl Parser {
     pub fn parse_operator(
         &mut self,
         generics: &Vec<Generic>,
-        public_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
-        local_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
+        public_types: &BTreeMap<TypeSignature, RosarioType>,
+        local_types: &BTreeMap<TypeSignature, RosarioType>,
     ) -> Operator {
         self.token_pos += 1;
 
@@ -964,8 +1003,8 @@ impl Parser {
     pub fn parse_procedure(
         &mut self,
         generics: &Vec<Generic>,
-        public_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
-        local_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
+        public_types: &BTreeMap<TypeSignature, RosarioType>,
+        local_types: &BTreeMap<TypeSignature, RosarioType>,
     ) -> Procedure {
         self.token_pos += 1;
 
@@ -994,8 +1033,8 @@ impl Parser {
     pub fn parse_function(
         &mut self,
         generics: &Vec<Generic>,
-        public_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
-        local_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
+        public_types: &BTreeMap<TypeSignature, RosarioType>,
+        local_types: &BTreeMap<TypeSignature, RosarioType>,
     ) -> Function {
         self.token_pos += 1;
 
@@ -1047,8 +1086,8 @@ impl Parser {
     pub fn parse_variable(
         &mut self,
         id_name: String,
-        public_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
-        local_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
+        public_types: &BTreeMap<TypeSignature, RosarioType>,
+        local_types: &BTreeMap<TypeSignature, RosarioType>,
     ) -> Expression {
         // TODO: Add checking if variable exists.
         self.token_pos += 1;
@@ -1079,7 +1118,7 @@ impl Parser {
                 .1;
 
             match &ty_content.content {
-                RosarioTypeContent::Enum(enumerable) => {
+                TypeContent::Enum(enumerable) => {
                     let mut enum_index = 0;
                     for (index, argument) in &enumerable.contents {
                         if argument.0 == right_name {
@@ -1128,10 +1167,10 @@ impl Parser {
     pub fn find_type_by_name<'a>(
         &'a self,
         name: String,
-        public_types: Option<&'a BTreeMap<RosarioTypeSignature, RosarioType>>,
-        local_types: Option<&'a BTreeMap<RosarioTypeSignature, RosarioType>>,
+        public_types: Option<&'a BTreeMap<TypeSignature, RosarioType>>,
+        local_types: Option<&'a BTreeMap<TypeSignature, RosarioType>>,
         get_all_types: bool,
-    ) -> (&'a RosarioTypeSignature, &'a RosarioType) {
+    ) -> (&'a TypeSignature, &'a RosarioType) {
         match public_types {
             Some(public_types) => {
                 for (signature, ty) in public_types {
@@ -1177,8 +1216,8 @@ impl Parser {
         &mut self,
         left: Option<Expression>,
         name: Option<String>,
-        public_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
-        local_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
+        public_types: &BTreeMap<TypeSignature, RosarioType>,
+        local_types: &BTreeMap<TypeSignature, RosarioType>,
     ) -> Expression {
         let final_name = name.clone();
         let expr = match &self.current_token().ty {
@@ -1309,8 +1348,8 @@ impl Parser {
     pub fn parse_if(
         &mut self,
         name: Option<String>,
-        public_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
-        local_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
+        public_types: &BTreeMap<TypeSignature, RosarioType>,
+        local_types: &BTreeMap<TypeSignature, RosarioType>,
     ) -> Expression {
         let mut statements: Vec<(Expression, Body)> = vec![];
 
@@ -1472,8 +1511,8 @@ impl Parser {
     pub fn parse_match(
         &mut self,
         name: Option<String>,
-        public_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
-        local_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
+        public_types: &BTreeMap<TypeSignature, RosarioType>,
+        local_types: &BTreeMap<TypeSignature, RosarioType>,
     ) -> Expression {
         self.token_pos += 1;
 
@@ -1529,8 +1568,8 @@ impl Parser {
 
     pub fn parse_let(
         &mut self,
-        public_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
-        local_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
+        public_types: &BTreeMap<TypeSignature, RosarioType>,
+        local_types: &BTreeMap<TypeSignature, RosarioType>,
     ) -> Expression {
         self.token_pos += 1;
         let is_mutable = match matches!(self.current_token().ty, TokenType::Mutable) {
@@ -1576,8 +1615,8 @@ impl Parser {
         &mut self,
         name: Option<String>,
         no_body: Option<Vec<TokenType>>,
-        public_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
-        local_types: &BTreeMap<RosarioTypeSignature, RosarioType>,
+        public_types: &BTreeMap<TypeSignature, RosarioType>,
+        local_types: &BTreeMap<TypeSignature, RosarioType>,
     ) -> Body {
         if no_body.is_none() {
             self.check_token(TokenType::Begin);

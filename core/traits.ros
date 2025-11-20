@@ -20,3 +20,8 @@ end Drop;
 public trait Default is
     function Default() => Self;
 end Default;
+
+public trait Range is
+    function Min() => Self;
+    function Max() => Self;
+end Range;

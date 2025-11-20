@@ -30,7 +30,7 @@ pub enum Expression {
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct NewEnum {
-    pub ty: RosarioTypeSignature,
+    pub ty: TypeSignature,
     pub item: usize,
     pub right: Box<Expression>,
 }
@@ -84,7 +84,7 @@ pub enum MatchOption {
 pub struct Let {
     pub is_mutable: bool,
     pub name: String,
-    pub ty: RosarioTypeSignature,
+    pub ty: TypeSignature,
     pub initializer: Box<Expression>,
 }
 
@@ -116,7 +116,7 @@ pub enum IsMutable {
 pub enum ReturnType {
     #[default]
     None,
-    Type(IsMutable, RosarioTypeSignature),
+    Type(IsMutable, TypeSignature),
     Generic(IsMutable, String),
 }
 
@@ -137,7 +137,7 @@ pub struct Argument {
 pub enum ArgumentType {
     #[default]
     Unknown,
-    Variable(String, RosarioTypeSignature),
+    Variable(String, TypeSignature),
     SelfVariable,
 }
 
@@ -156,13 +156,13 @@ pub enum GenericEnd {
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
-pub enum RosarioTypeContent {
+pub enum TypeContent {
     #[default]
     None,
     Range(Range),
     Enum(Enum),
     Modulo(Expression),
-    TypeRef(RosarioTypeSignature),
+    TypeRef(TypeSignature),
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
@@ -175,7 +175,7 @@ pub enum EnumArgument {
     #[default]
     Unknown,
     Generic(String),
-    Type(RosarioTypeSignature),
+    Type(TypeSignature),
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
@@ -198,7 +198,7 @@ pub struct ParsedResult {
 }
 
 #[derive(Debug, Default, Clone)]
-pub struct RosarioTypeImplementation {
+pub struct TypeImplementation {
     pub procedures: Vec<Procedure>,
     pub public_procedures: Vec<Procedure>,
     pub functions: Vec<Function>,
@@ -215,7 +215,13 @@ pub struct Operator {
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct RosarioTypeSignature {
+pub struct TypeSignature {
+    pub name: String,
+    pub generics: Vec<Generic>,
+}
+
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct TraitSignature {
     pub name: String,
     pub generics: Vec<Generic>,
 }
@@ -223,7 +229,7 @@ pub struct RosarioTypeSignature {
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct RosarioType {
     pub traits: Vec<String>,
-    pub content: RosarioTypeContent,
+    pub content: TypeContent,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
@@ -231,13 +237,19 @@ pub struct Trait {
     signatures: Vec<Signature>,
 }
 
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct ImplSignature {
+    pub impl_of: Option<TraitSignature>,
+    pub impl_for: TypeSignature,
+}
+
 #[derive(Debug, Default, Clone)]
 pub struct File {
-    pub types: BTreeMap<RosarioTypeSignature, RosarioType>,
-    pub public_types: BTreeMap<RosarioTypeSignature, RosarioType>,
-    pub implementations: BTreeMap<RosarioTypeSignature, RosarioTypeImplementation>,
-    pub traits: BTreeMap<String, Trait>,
-    pub public_traits: BTreeMap<String, Trait>,
+    pub types: BTreeMap<TypeSignature, RosarioType>,
+    pub public_types: BTreeMap<TypeSignature, RosarioType>,
+    pub implementations: BTreeMap<ImplSignature, TypeImplementation>,
+    pub traits: BTreeMap<TraitSignature, Trait>,
+    pub public_traits: BTreeMap<TraitSignature, Trait>,
     pub procedures: Vec<Procedure>,
     pub public_procedures: Vec<Procedure>,
     pub functions: Vec<Function>,
