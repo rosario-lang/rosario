@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use crate::{
     ast::{
-        Expression, Function, ImplSignature, IsMutable, Package, ReturnType, RosarioType,
+        Expression, Function, ImplSignature, IsMutable, Package, Range, ReturnType, RosarioType,
         Signature, Trait, TraitSignature, TypeContent, TypeImplementation, TypeSignature,
     },
     parser::Parser,
@@ -39,6 +39,38 @@ pub fn find_original_rosario_type_by_signature(
     todo!()
 }
 
+pub fn solve_range(
+    range: &Range,
+    signature: &TypeSignature,
+    packages: &BTreeMap<String, Package>,
+    implementations: &mut BTreeMap<ImplSignature, TypeImplementation>,
+) {
+    let range_trait = implementations
+        .entry(ImplSignature {
+            impl_of: Some(find_trait_by_name("Range", packages)),
+            impl_for: signature.clone(),
+        })
+        .or_insert(TypeImplementation::default());
+
+    range_trait.public_functions.push(Function {
+        signature: Signature {
+            name: "Min".to_string(),
+            arguments: vec![],
+            return_type: ReturnType::Type(IsMutable::False, signature.clone()),
+        },
+        body: range.left.clone(),
+    });
+
+    range_trait.public_functions.push(Function {
+        signature: Signature {
+            name: "Max".to_string(),
+            arguments: vec![],
+            return_type: ReturnType::Type(IsMutable::False, signature.clone()),
+        },
+        body: range.right.clone(),
+    });
+}
+
 pub fn implicit_trait_pass(parser: &mut Parser) {
     let why_do_i_have_to_do_this = parser.result.packages.clone();
 
@@ -46,33 +78,12 @@ pub fn implicit_trait_pass(parser: &mut Parser) {
         for (signature, ty) in &i.1.file.public_types {
             match &ty.content {
                 TypeContent::Range(range) => {
-                    let range_trait = i
-                        .1
-                        .file
-                        .implementations
-                        .entry(ImplSignature {
-                            impl_of: Some(find_trait_by_name("Range", &why_do_i_have_to_do_this)),
-                            impl_for: signature.clone(),
-                        })
-                        .or_insert(TypeImplementation::default());
-
-                    range_trait.public_functions.push(Function {
-                        signature: Signature {
-                            name: "Min".to_string(),
-                            arguments: vec![],
-                            return_type: ReturnType::Type(IsMutable::False, signature.clone()),
-                        },
-                        body: range.left.clone(),
-                    });
-
-                    range_trait.public_functions.push(Function {
-                        signature: Signature {
-                            name: "Max".to_string(),
-                            arguments: vec![],
-                            return_type: ReturnType::Type(IsMutable::False, signature.clone()),
-                        },
-                        body: range.right.clone(),
-                    });
+                    solve_range(
+                        range,
+                        signature,
+                        &why_do_i_have_to_do_this,
+                        &mut i.1.file.implementations,
+                    );
                 }
                 TypeContent::TypeRef(ref_signature) => {
                     let ty = find_original_rosario_type_by_signature(
@@ -82,41 +93,12 @@ pub fn implicit_trait_pass(parser: &mut Parser) {
 
                     match ty.content {
                         TypeContent::Range(range) => {
-                            let range_trait =
-                                i.1.file
-                                    .implementations
-                                    .entry(ImplSignature {
-                                        impl_of: Some(find_trait_by_name(
-                                            "Range",
-                                            &why_do_i_have_to_do_this,
-                                        )),
-                                        impl_for: signature.clone(),
-                                    })
-                                    .or_insert(TypeImplementation::default());
-
-                            range_trait.public_functions.push(Function {
-                                signature: Signature {
-                                    name: "Min".to_string(),
-                                    arguments: vec![],
-                                    return_type: ReturnType::Type(
-                                        IsMutable::False,
-                                        signature.clone(),
-                                    ),
-                                },
-                                body: range.left.clone(),
-                            });
-
-                            range_trait.public_functions.push(Function {
-                                signature: Signature {
-                                    name: "Max".to_string(),
-                                    arguments: vec![],
-                                    return_type: ReturnType::Type(
-                                        IsMutable::False,
-                                        signature.clone(),
-                                    ),
-                                },
-                                body: range.right.clone(),
-                            });
+                            solve_range(
+                                &range,
+                                signature,
+                                &why_do_i_have_to_do_this,
+                                &mut i.1.file.implementations,
+                            );
                         }
                         _ => todo!("{:?}", ty),
                     }
