@@ -309,7 +309,7 @@ impl CCompiler {
 
     pub fn get_static_constant_number(expr: &Expression) -> i128 {
         match expr {
-            Expression::Number(left, right) => match right {
+            Expression::Number(left, right, _) => match right {
                 Some(_) => todo!("Decimal Numbers."),
                 None => *left,
             },
@@ -542,7 +542,7 @@ impl CCompiler {
                 )
             }
             Expression::Variable(name) => result += &name,
-            Expression::Number(left, right) => match right {
+            Expression::Number(left, right, _) => match right {
                 Some(r) => result += &format!("{}.{}f", left.to_string(), r.to_string()),
                 None => result += &left.to_string(),
             },

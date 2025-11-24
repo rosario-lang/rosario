@@ -418,12 +418,29 @@ impl Parser {
                             self.token_pos += 1;
                         }
 
-                        self.check_ending(Some(name), None);
+                        self.check_ending(Some(name.clone()), None);
 
                         self.token_pos += 1;
 
                         self.check_token(TokenType::Semicolon);
                     }
+
+                    match is_public {
+                        false => main.file.traits.insert(
+                            TraitSignature {
+                                name,
+                                generics: vec![],
+                            },
+                            Trait { signatures },
+                        ),
+                        true => main.file.public_traits.insert(
+                            TraitSignature {
+                                name,
+                                generics: vec![],
+                            },
+                            Trait { signatures },
+                        ),
+                    };
                 }
                 _ => todo!(
                     "{:?} at {:?}",
@@ -440,252 +457,6 @@ impl Parser {
             .insert(self.lexer.file_name.clone(), main);
     }
 
-    pub fn solve_expression_to_number(expr: &Expression) -> Option<i128> {
-        match expr {
-            Expression::Number(l, r) => match r {
-                Some(_) => todo!("Decimal numbers."),
-                None => return Some(*l as i128),
-            },
-            Expression::Add(l, r) => {
-                let left = Self::solve_expression_to_number(l);
-                let right = Self::solve_expression_to_number(r);
-
-                if left.is_none() || right.is_none() {
-                    return None;
-                }
-
-                Some(left.unwrap() + right.unwrap())
-            }
-            Expression::Sub(l, r) => {
-                let left = Self::solve_expression_to_number(l);
-                let right = Self::solve_expression_to_number(r);
-
-                if left.is_none() || right.is_none() {
-                    return None;
-                }
-
-                Some(left.unwrap() - right.unwrap())
-            }
-            Expression::ToThePowerOf(l, r) => {
-                let left = Self::solve_expression_to_number(l);
-                let right = Self::solve_expression_to_number(r);
-
-                if left.is_none() || right.is_none() {
-                    return None;
-                }
-
-                Some(left.unwrap().pow(right.unwrap() as u32))
-            }
-            Expression::Parenthesis(expr) | Expression::Positive(expr) => {
-                Self::solve_expression_to_number(expr)
-            }
-            Expression::Negative(expr) => {
-                let expr = Self::solve_expression_to_number(expr);
-
-                if expr.is_none() {
-                    return None;
-                }
-
-                Some(0 - expr.unwrap())
-            }
-            _ => None,
-        }
-    }
-
-    pub fn static_number_solver_pass(&mut self) {
-        for (_, package) in &mut self.result.packages {
-            let types = &mut package.file.types;
-            'types_loop: for (_, ty) in types {
-                match &mut ty.content {
-                    TypeContent::Range(range) => {
-                        let left = Self::solve_expression_to_number(&range.left);
-                        let right = Self::solve_expression_to_number(&range.right);
-
-                        if left.is_none() || right.is_none() {
-                            continue 'types_loop;
-                        }
-
-                        let left_u = left.unwrap();
-                        let right_u = right.unwrap();
-
-                        range.left = Expression::Number(left_u, None);
-                        range.right = Expression::Number(right_u, None);
-                    }
-                    _ => {}
-                }
-            }
-
-            let public_types = &mut package.file.public_types;
-            'types_loop: for (_, ty) in public_types {
-                match &mut ty.content {
-                    TypeContent::Range(range) => {
-                        let left = Self::solve_expression_to_number(&range.left);
-                        let right = Self::solve_expression_to_number(&range.right);
-
-                        if left.is_none() || right.is_none() {
-                            continue 'types_loop;
-                        }
-
-                        let left_u = left.unwrap();
-                        let right_u = right.unwrap();
-
-                        range.left = Expression::Number(left_u, None);
-                        range.right = Expression::Number(right_u, None);
-                    }
-                    _ => {}
-                }
-            }
-        }
-    }
-
-    pub fn get_solved_generic_type_signature(ty: &TypeSignature) -> TypeSignature {
-        TypeSignature {
-            name: format!("{}_{}", ty.name, {
-                let mut result = String::new();
-
-                for i in &ty.generics {
-                    result += &(i.name.clone() + "_");
-                }
-
-                result.pop();
-                result
-            }),
-            generics: vec![],
-        }
-    }
-
-    pub fn get_solved_generics(expr: &mut Expression) -> Vec<TypeSignature> {
-        let mut result: Vec<TypeSignature> = vec![];
-        match expr {
-            Expression::Body(body) => {
-                for i in &mut body.content {
-                    result.extend(Self::get_solved_generics(i));
-                }
-            }
-            Expression::Let(let_var) => {
-                if !let_var.ty.generics.is_empty() {
-                    result.push(let_var.ty.clone());
-                    let_var.ty = Self::get_solved_generic_type_signature(&let_var.ty);
-                }
-
-                result.extend(Self::get_solved_generics(&mut let_var.initializer));
-            }
-            Expression::NewEnum(new_enum) => {
-                if !new_enum.ty.generics.is_empty() {
-                    result.push(new_enum.ty.clone());
-                    new_enum.ty = Self::get_solved_generic_type_signature(&new_enum.ty);
-                }
-
-                result.extend(Self::get_solved_generics(&mut new_enum.right));
-            }
-            _ => {}
-        }
-
-        result
-    }
-
-    pub fn convert_to_solved_type(
-        original_signature: &TypeSignature,
-        original_type: &RosarioType,
-        solved_signature: &TypeSignature,
-    ) -> RosarioType {
-        let mut convert_to: BTreeMap<String, String> = BTreeMap::new();
-        let mut count = 0;
-        for i in &original_signature.generics {
-            convert_to.insert(
-                i.name.clone(),
-                solved_signature.generics[count].name.clone(),
-            );
-            count += 1;
-        }
-
-        RosarioType {
-            traits: original_type.traits.clone(),
-            content: match &original_type.content {
-                TypeContent::Enum(enumerable) => {
-                    let mut final_enumerable = enumerable.clone();
-
-                    for (_, enum_arguments) in &mut final_enumerable.contents {
-                        for i in &mut enum_arguments.1 {
-                            let mut final_enum_argument = EnumArgument::Unknown;
-                            match i {
-                                EnumArgument::Generic(generic) => {
-                                    for (from, to) in &convert_to {
-                                        if from == generic {
-                                            final_enum_argument =
-                                                EnumArgument::Type(TypeSignature {
-                                                    name: to.clone(),
-                                                    generics: vec![],
-                                                });
-                                        }
-                                    }
-                                }
-                                _ => {}
-                            }
-
-                            if final_enum_argument != EnumArgument::Unknown {
-                                *i = final_enum_argument;
-                            }
-                        }
-                    }
-
-                    TypeContent::Enum(final_enumerable)
-                }
-                _ => todo!(),
-            },
-        }
-    }
-
-    pub fn generic_solver_pass(&mut self) {
-        let mut solved_generics: BTreeMap<String, Vec<TypeSignature>> = BTreeMap::new();
-        for (name, package) in &mut self.result.packages {
-            for procedure in &mut package.file.procedures {
-                let content = Self::get_solved_generics(&mut procedure.body);
-                match solved_generics.get_mut(name) {
-                    Some(generics) => {
-                        generics.extend(content);
-                    }
-                    None => {
-                        solved_generics.insert(name.clone(), content);
-                    }
-                };
-            }
-        }
-
-        for (package_name, signatures) in &solved_generics {
-            'outer: for i in signatures {
-                for (name, pack) in &self.generic_results {
-                    if pack
-                        .file
-                        .public_types
-                        .get(&Self::get_solved_generic_type_signature(i))
-                        .is_some()
-                    {
-                        continue 'outer;
-                    }
-                }
-
-                self.generic_results
-                    .entry(package_name.clone())
-                    .or_insert(Package::default());
-
-                let ty = self.find_type_by_name(i.name.clone(), None, None, true);
-                let solved_ty_signature = Self::get_solved_generic_type_signature(i);
-
-                let solved_ty = Self::convert_to_solved_type(ty.0, ty.1, i);
-
-                match self.generic_results.get_mut(package_name) {
-                    Some(pkg) => {
-                        pkg.file
-                            .public_types
-                            .insert(solved_ty_signature, solved_ty.clone());
-                    }
-                    None => unreachable!(),
-                }
-            }
-        }
-    }
-
     pub fn start(&mut self, external_packages: Option<BTreeMap<String, Package>>) {
         match external_packages {
             Some(e) => self.result.packages.extend(e),
@@ -693,44 +464,6 @@ impl Parser {
         };
 
         self.main_pass();
-
-        self.generic_solver_pass();
-
-        self.implicit_function_pass();
-
-        self.static_number_solver_pass();
-    }
-
-    pub fn implicit_function_pass(&mut self) {
-        for i in &mut self.result.packages {
-            for (signature, ty) in &i.1.file.public_types {
-                match &ty.content {
-                    TypeContent::Range(range) => {
-                        let mut range_trait =
-                            i.1.file
-                                .implementations
-                                .entry(ImplSignature {
-                                    impl_of: Some(Self::find_trait_by_name(
-                                        "Range",
-                                        &i.1.file.traits,
-                                        &i.1.file.public_traits,
-                                    )),
-                                    impl_for: signature.clone(),
-                                })
-                                .or_insert(TypeImplementation::default());
-                    }
-                    _ => todo!(),
-                }
-            }
-        }
-    }
-
-    pub fn find_trait_by_name(
-        tr: &str,
-        traits: &BTreeMap<TraitSignature, Trait>,
-        public_traits: &BTreeMap<TraitSignature, Trait>,
-    ) -> TraitSignature {
-        todo!()
     }
 
     pub fn parse_implementation(
@@ -1093,7 +826,9 @@ impl Parser {
         self.token_pos += 1;
 
         let mut ty = None;
-        if self.current_token().ty == TokenType::LessThan {
+        if self.current_token().ty == TokenType::LessThan
+            || self.current_token().ty == TokenType::DoubleColon
+        {
             self.token_pos -= 1;
 
             ty = Some(self.parse_type_signature());
@@ -1133,7 +868,13 @@ impl Parser {
                         right: Box::new(right),
                     });
                 }
-                _ => todo!(),
+                TypeContent::TypeRef(_) => {
+                    return Expression::AccessTypeImplementation(
+                        ty.unwrap().clone(),
+                        Box::new(right),
+                    );
+                }
+                _ => todo!("{:?}", ty_content.content),
             }
         }
 
@@ -1221,10 +962,14 @@ impl Parser {
     ) -> Expression {
         let final_name = name.clone();
         let expr = match &self.current_token().ty {
-            TokenType::Number(left, right) => Expression::Number(
-                left.parse::<i128>().unwrap_or(0),
-                match right {
+            TokenType::Number(n_left, n_right) => Expression::Number(
+                n_left.parse::<i128>().unwrap_or(0),
+                match n_right {
                     Some(right) => Some(right.parse::<i128>().unwrap_or(0)),
+                    None => None,
+                },
+                match left {
+                    Some(s) => s.get_type(),
                     None => None,
                 },
             ),

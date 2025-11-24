@@ -3,7 +3,7 @@ use library::basic_types::*;
 use C_LANG("stdlib.h");
 use C_LANG("string.h");
 
-public trait Access<T> is
+public trait SingleAccessCore<T: Single + Default> is
     function New() => Self;
     function From(content: T) => Self;
     function From_Pointer(pointer: *T, length: NonZeroInt) => Self;
@@ -21,7 +21,7 @@ enum
     Some(*T),
 end SingleAccess;
 
-implement Access<T> for SingleAccess<T>
+implement SingleAccessCore<T> for SingleAccess<T>
     function New() => Self is Self::From(T::Default());
 
     function From(content: T) => Self is
@@ -60,7 +60,15 @@ end implement;
 
 implement Drop for SingleAccess
     procedure Drop(mutable self) is self.Free();
-end Drop;
+end implement;
+
+public trait ContainerAccessCore<T: Single + Default> is
+    function New<C: Container>(content: C<T>) => Self;
+    function From_Pointer(pointer: *T, length: NonZeroInt) => Self;
+
+    procedure Free(mutable self);
+    function Unwrap() => T;
+end ContainerAccessCore;
 
 -- # Container Access.
 --
@@ -71,10 +79,8 @@ enum
     Some(*T, NonZeroInt),
 end ContainerAccess;
 
-implement Access<T> for ContainerAccess<T>
-    function New() => Self is Self::From(T::Default());
-
-    function From<C: Container>(content: C<T>) => Self is
+implement ContainerAccessCore<T> for ContainerAccess<T>
+    function New<C: Container>(content: C<T>) => Self is
     begin
         let size: NonZeroInt = content.Length()
             as balanced NonZeroInt * size_of T;
@@ -86,7 +92,7 @@ implement Access<T> for ContainerAccess<T>
     end From;
 
     function From_Pointer(pointer: *T, length: NonZeroInt) => Self is
-        Self::Some(pointer, length as balanced UInteger * size_of T);
+        Self::Some(pointer, length * size_of T);
 
     procedure Free(mutable self) is
         match self is

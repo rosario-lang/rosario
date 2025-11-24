@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 pub enum Expression {
     #[default]
     Empty,
-    Number(i128, Option<i128>),
+    Number(i128, Option<i128>, Option<TypeSignature>),
     Negative(Box<Expression>),
     Positive(Box<Expression>),
     Not(Box<Expression>),
@@ -24,8 +24,20 @@ pub enum Expression {
     SelfVariable,
     AccessFunction(Box<Expression>, FunctionCall),
     AccessVariable(Box<Expression>, String),
+    AccessTypeImplementation(TypeSignature, Box<Expression>),
     Clang(Box<Expression>),
     NewEnum(NewEnum),
+    Return(Box<Expression>),
+}
+
+impl Expression {
+    pub fn get_type(&self) -> Option<TypeSignature> {
+        match self {
+            Self::Number(_, _, ty) => ty.clone(),
+            Self::Let(l) => Some(l.ty.clone()),
+            _ => todo!(),
+        }
+    }
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
@@ -234,7 +246,7 @@ pub struct RosarioType {
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct Trait {
-    signatures: Vec<Signature>,
+    pub signatures: Vec<Signature>,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]

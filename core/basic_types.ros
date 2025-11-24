@@ -17,7 +17,7 @@ public type UInt64 is range 0..2 ** 64 - 1;
 public type Integer is Int32;
 public type UInteger is UInt32;
 
-public type NonZeroInt is range 1..UInteger.Max();
+public type NonZeroInt is range 1..UInteger::Max();
 
 public type Bool is
 enum

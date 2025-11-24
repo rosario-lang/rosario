@@ -1,3 +1,4 @@
+pub mod all_passes;
 pub mod ast;
 pub mod lexer;
 pub mod parser;
@@ -11,6 +12,8 @@ pub fn parse_core() -> parser::Parser {
     let mut parser = parser::Parser::new(lexer);
     parser.start(None);
 
+    all_passes::standard_pass(&mut parser);
+
     dbg!(&parser.result);
 
     parser
@@ -18,7 +21,7 @@ pub fn parse_core() -> parser::Parser {
 
 #[cfg(test)]
 mod tests {
-    use crate::{lexer::Lexer, parser::Parser};
+    use crate::{all_passes, lexer::Lexer, parser::Parser};
 
     #[test]
     fn it_works() {
@@ -29,6 +32,8 @@ mod tests {
 
         let mut parser = Parser::new(lexer);
         parser.start(None);
+
+        all_passes::standard_pass(&mut parser);
 
         dbg!(&parser.result);
     }
@@ -42,6 +47,8 @@ mod tests {
 
         let mut parser = Parser::new(lexer);
         parser.start(None);
+
+        all_passes::standard_pass(&mut parser);
 
         dbg!(&parser.result);
     }

@@ -36,6 +36,8 @@ typedef signed char core_basic_types_Int8;
 
 typedef core_basic_types_Int32 core_basic_types_Integer;
 
+typedef unsigned long int core_basic_types_NonZeroInt;
+
 typedef unsigned short int core_basic_types_UInt16;
 
 typedef unsigned long int core_basic_types_UInt32;

@@ -1,5 +1,5 @@
 use rosarioc::CCompiler;
-use rosarioparser::{lexer::Lexer, parser::Parser};
+use rosarioparser::{all_passes, lexer::Lexer, parser::Parser};
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -11,6 +11,8 @@ fn main() {
 
     let mut parser = Parser::new(lexer);
     parser.start(Some(rosarioparser::parse_core().result.packages));
+
+    all_passes::standard_pass(&mut parser);
 
     dbg!(&parser.result);
 
