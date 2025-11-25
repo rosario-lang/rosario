@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 
 use crate::{
     ast::{
-        Expression, Function, ImplSignature, IsMutable, Package, Range, ReturnType, RosarioType,
-        Signature, Trait, TraitSignature, TypeContent, TypeImplementation, TypeSignature,
+        Function, ImplSignature, IsMutable, Package, Range, ReturnType, RosarioType, Signature,
+        TraitSignature, TypeContent, TypeImplementation, TypeSignature,
     },
     parser::Parser,
 };

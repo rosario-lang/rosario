@@ -26,7 +26,7 @@ implement SingleAccessCore<T> for SingleAccess<T>
 
     function From(content: T) => Self is
     begin
-        let result: *T = C_LANG malloc(size_of T);
+        let mutable result: *T = C_LANG malloc(size_of T);
         C_LANG memcpy(result, content, size_of T);
 
         return Self::Some(result);
@@ -62,7 +62,7 @@ implement Drop for SingleAccess
     procedure Drop(mutable self) is self.Free();
 end implement;
 
-public trait ContainerAccessCore<T: Single + Default> is
+public trait ContainerAccessCore<T: Default> is
     function New<C: Container>(content: C<T>) => Self;
     function From_Pointer(pointer: *T, length: NonZeroInt) => Self;
 
@@ -73,7 +73,7 @@ end ContainerAccessCore;
 -- # Container Access.
 --
 -- ## A "safe pointer" used for heap allocated and foreign groups (arrays, vectors, etc.).
-pub type ContainerAccess<T: Single + Default> is
+pub type ContainerAccess<T: Default> is
 enum
     None,
     Some(*T, NonZeroInt),
@@ -85,7 +85,7 @@ implement ContainerAccessCore<T> for ContainerAccess<T>
         let size: NonZeroInt = content.Length()
             as balanced NonZeroInt * size_of T;
 
-        let result: *T = C_LANG malloc(size);
+        let mutable result: *T = C_LANG malloc(size);
         C_LANG memcpy(result, content, size);
 
         return Self::Some(result, size);

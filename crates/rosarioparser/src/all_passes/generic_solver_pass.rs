@@ -1,7 +1,10 @@
 use std::collections::BTreeMap;
 
 use crate::{
-    ast::{EnumArgument, Expression, Package, RosarioType, TypeContent, TypeSignature},
+    ast::{
+        ArgumentType, EnumArgument, Expression, ImplSignature, Package, ReturnType, RosarioType,
+        TypeContent, TypeSignature,
+    },
     parser::Parser,
 };
 
@@ -51,11 +54,10 @@ pub fn get_solved_generics(expr: &mut Expression) -> Vec<TypeSignature> {
     result
 }
 
-pub fn convert_to_solved_type(
+pub fn get_generic_conversion_tree_map(
     original_signature: &TypeSignature,
-    original_type: &RosarioType,
     solved_signature: &TypeSignature,
-) -> RosarioType {
+) -> BTreeMap<String, String> {
     let mut convert_to: BTreeMap<String, String> = BTreeMap::new();
     let mut count = 0;
     for i in &original_signature.generics {
@@ -65,6 +67,16 @@ pub fn convert_to_solved_type(
         );
         count += 1;
     }
+
+    convert_to
+}
+
+pub fn convert_to_solved_type(
+    original_signature: &TypeSignature,
+    original_type: &RosarioType,
+    solved_signature: &TypeSignature,
+) -> RosarioType {
+    let convert_to = get_generic_conversion_tree_map(original_signature, solved_signature);
 
     RosarioType {
         traits: original_type.traits.clone(),
@@ -137,9 +149,58 @@ pub fn generic_solver_pass(parser: &mut Parser) {
                 .or_insert(Package::default());
 
             let ty = parser.find_type_by_name(i.name.clone(), None, None, true);
+            let ty = (ty.0.clone(), ty.1.clone()); // Why Rust, why...
+
             let solved_ty_signature = get_solved_generic_type_signature(i);
 
-            let solved_ty = convert_to_solved_type(ty.0, ty.1, i);
+            let solved_ty = convert_to_solved_type(&ty.0, &ty.1, i);
+
+            for (_name, pkg) in &parser.result.packages {
+                for (signature, implement) in &pkg.file.implementations {
+                    if signature.impl_for == ty.0 {
+                        let convert_to = get_generic_conversion_tree_map(&ty.0, i);
+
+                        let mut final_implement = implement.clone();
+
+                        for i in &mut final_implement.public_functions {
+                            let mut final_return_type = ReturnType::None;
+                            match &i.signature.return_type {
+                                ReturnType::Generic(is_mutable, generic) => {
+                                    for (from, to) in &convert_to {
+                                        if from == generic {
+                                            final_return_type = ReturnType::Type(
+                                                is_mutable.clone(),
+                                                TypeSignature {
+                                                    name: to.clone(),
+                                                    generics: vec![],
+                                                },
+                                            );
+                                        }
+                                    }
+                                }
+                                _ => {}
+                            }
+
+                            if final_return_type != ReturnType::None {
+                                i.signature.return_type = final_return_type;
+                            }
+                        }
+
+                        match parser.generic_results.get_mut(package_name) {
+                            Some(pkg) => {
+                                pkg.file.implementations.insert(
+                                    ImplSignature {
+                                        impl_of: signature.impl_of.clone(),
+                                        impl_for: solved_ty_signature.clone(),
+                                    },
+                                    final_implement,
+                                );
+                            }
+                            None => unreachable!(),
+                        }
+                    }
+                }
+            }
 
             match parser.generic_results.get_mut(package_name) {
                 Some(pkg) => {

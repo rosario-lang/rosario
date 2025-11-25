@@ -202,8 +202,8 @@ impl CType {
 
                         let mut count = 0;
                         for i in &c_enum.items {
+                            let mut items_count = 0_usize;
                             for j in &i.types {
-                                let mut items_count = 0;
                                 result += &format!(
                                     "    {} {}_{};\n",
                                     match j {
@@ -672,6 +672,10 @@ impl CCompiler {
         }
 
         for (package_name, package) in &self.parser.result.packages {
+            for (signature, implement) in &package.file.implementations {
+                for i in &implement.public_functions {}
+            }
+
             for procedure in &package.file.procedures {
                 let signature = self.codegen_signature(&procedure.signature);
                 if procedure.signature.name == "Main"
