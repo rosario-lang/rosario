@@ -19,7 +19,7 @@ And the list goes on...
 
 These are issues that can (and will) happen in the middle of your project, and it will force you to shift your focus COMPLETELY into having to deal with a language related problem, that it'll not allow you to continue the project, until you fix it.
 
-Rosario aims to help you with that, so you can focus on what's important: **Accomplishing your goals**... That doesn't mean that you can't focus on the language's features, **but it should've be a choice and NOT something that you're forced to**.
+Rosario aims to help you with that, so you can focus on what's important: **Accomplishing your goals**... **You should only focus on the language's intricacies IF they're part of your goals, and NOT something that you're forced to deal with**.
 
 ### Mistakes and Misunderstandings shouldn't have exaggerated consequences.
 
