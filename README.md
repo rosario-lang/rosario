@@ -4,7 +4,7 @@
 
 ## Empowering Safety with Trees!
 
-Rosario is a strongly typed, blazingly fast and fully safe programming language, helping you to focus into what's important: build and finish fast, safe, and great software.
+Rosario aims to be a strongly typed, blazingly fast and fully safe programming language, helping you to focus into what's important: build and finish fast, safe, and great software.
 
 ### You should focus on your goals, not on the language's intricacies.
 
