@@ -8,7 +8,7 @@ Rosario aims to be a strongly typed, blazingly fast and fully safe programming l
 
 ### You should focus on your goals, not on the language's intricacies.
 
-We all like some features (and lack of features) in programming languages. Some will like garbage collectors, others will like manual memory management, others will like the borrow checker, and so on... But those can become a problem when you're trying to finish a product, and the "so beloved" features start getting in the way:
+We all like features (and lack of features) based around memory management. Some will like garbage collectors, others will like manual memory management, others will like the borrow checker, and so on... But those can become a problem when you're trying to finish a product, and the "so beloved" features start getting in the way:
 
 - We accidentally used after free one or more times, and we don't know where.
 - The borrow checker shows up like a jumpscare and all of the sudden we have to deal with its rules.
