@@ -2,8 +2,38 @@
 
 # Rosario Programming Language
 
-## Empowering Safety with Trees!
+## Empowering Safety with Groups and Trees!
 
 Rosario aims to be a strongly typed, blazingly fast and fully safe programming language, helping you to focus into what's important: build and finish fast, safe, and great software.
 
-*TODO: Continue*
+# Features.
+
+*WARNING: The language its in its very early developement stage, some of the features will not work 100% yet.*
+
+## Just Think in Groups and Trees, its *that* easy!
+
+Rosario is heavily focused around groups (arrays, vectors, hashmaps, etc.) and tree structuring (variables that contain groups of other variables).
+
+While this approach seems simple, it helps you with building entire projects, architechtures and systems, that are simple and easy to understand and work with no matter the scale.
+
+## Incredibly Strong Type and Trait System.
+
+*TODO*.
+
+## No borrow checker, no garbage collector, no reference counting, FULL Safety.
+
+Because of all of the features mentioned above, the language doesn't need a garbage collector to clear unused variables, or the borrow checker and the reference counter to keep track of lifetimes...
+
+Thanks to the Groups and Trees, not only the compiler knows where the lifetime of a variable begins and ends, its x1000 easier for **YOU** and other programmers to know the lifetimes of all of the variables of your program.
+
+This results in the language being incredibly simple and powerful, without any fancy feature that can either slow your program down, or slow YOU down.
+
+## Designed to help you focus on what you have to do.
+
+We believe that the language shouldn't stop you for hours because of an issue that isn't related to the logic of your program: From the garbage collector leaking memory, to the borrow checker showing up all of the sudden to enforce its rules, to doing a "use after free" a couple of times and not knowing where, etcetera.
+
+Rosario aims to help you to solve any sort of problem related to its rules as quickly as possible, so you can quickly get back on track and finish your goals.
+
+## Compiles to C for FAST performance, and comfort.
+
+*TODO*
