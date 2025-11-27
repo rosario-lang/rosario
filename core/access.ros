@@ -63,7 +63,7 @@ implement Drop for SingleAccess
 end implement;
 
 public trait ContainerAccessCore<T: Default> is
-    function New<C: Container>(content: C<T>) => Self;
+    function New<R: Range>(content: array<R of T>) => Self;
     function From_Pointer(pointer: *T, length: NonZeroInt) => Self;
 
     procedure Free(mutable self);
@@ -80,7 +80,7 @@ enum
 end ContainerAccess;
 
 implement ContainerAccessCore<T> for ContainerAccess<T>
-    function New<C: Container>(content: C<T>) => Self is
+    function New<R: Range>(content: array<R of T>) => Self is
     begin
         let size: NonZeroInt = content.Length()
             as balanced NonZeroInt * size_of T;
