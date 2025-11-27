@@ -38,7 +38,7 @@ Rosario aims to help you to solve any sort of problem related to its rules as qu
 
 We believe that your time is always valuable, whether you code as a hobby, or as a full time job.
 
-And something what we could probably agree on, is that nobody wants to deal with problems that the compiler wasn't able to catch properly, resulting in simple mistakes that could bring all of your entire architechture down... Specially when these show up at 2AM in the morning, with 4 hours left to the deadline and your entire blood stream being replaced with coffee.
+And something what we could probably agree on, is that nobody wants to deal with problems that the compiler wasn't able to catch properly, resulting in simple mistakes that could bring all of your entire architechture down...
 
 Rosario will stop you from writing anti-patterns before they become a problem (in form of compiler errors), and even if you manage to write anti-patterns despite with all of the checks in place, the language's design will help you easily recognize these problems and fix them, turning hours of constant trial and error into something that you can solve in a matter of seconds.
 
