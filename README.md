@@ -32,7 +32,7 @@ This results in the language being incredibly simple and powerful, without any f
 
 We believe that the language shouldn't stop you for hours because of an issue that isn't related to the logic of your program: From the garbage collector leaking memory, to the borrow checker showing up all of the sudden to enforce its rules, to doing a "use after free" a couple of times and not knowing where, etcetera.
 
-Rosario aims to help you to solve any sort of problem related to its rules as quickly as possible, so you can quickly get back on track and finish your goals.
+Rosario aims to help you to solve any sort of problem related to its rules as quickly as possible, so you can get back on track and finish your goals.
 
 ## Compiles to C for FAST performance, and comfort.
 
