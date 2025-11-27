@@ -42,7 +42,7 @@ And something what we could probably agree on, is that nobody wants to deal with
 
 Rosario will stop you from writing anti-patterns before they become a problem (in form of compiler errors), and even if you manage to write anti-patterns despite with all of the checks in place, the language's design will help you easily recognize these problems and fix them, turning hours of constant trial and error into something that you can solve in a matter of seconds.
 
-Your time and mental health is important to get your goals done, so you can deliver something that is as excellent as possible.
+Your time and mental health is important to get your goals done, so you can deliver something that is as excellent as possible, without having to deal with an enormous amount of stress.
 
 ## Compiles to C for FAST performance, portability, and comfort.
 
