@@ -6,7 +6,7 @@ use C_LANG("string.h");
 public trait SingleAccessCore<T: Single + Default> is
     function New() => Self;
     function From(content: T) => Self;
-    function From_Pointer(pointer: *T, length: NonZeroInt) => Self;
+    function From_Pointer(pointer: *T) => Self;
 
     procedure Free(mutable self);
     function Unwrap() => T;
@@ -32,14 +32,7 @@ implement SingleAccessCore<T> for SingleAccess<T>
         return Self::Some(result);
     end From;
 
-    function From_Pointer(pointer: *T, length: NonZeroInt) => Self is
-    begin
-        if length != 1 then
-            Panic("Single Access should always have a length of 1");
-        end if;
-
-        return Self::Some(pointer, length);
-    end From_Pointer;
+    function From_Pointer(pointer: *T) => Self is Self::Some(pointer);
 
     procedure Free(mutable self) is
     begin
