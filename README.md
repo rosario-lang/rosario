@@ -10,6 +10,17 @@ Rosario aims to be a strongly typed, blazingly fast and fully safe programming l
 
 *WARNING: The language its in its very early developement stage, some of the features will not work 100% yet.*
 
+## Easy to learn, read and write!
+
+Its simple and concise syntax allows you to learn, read and write (even without a syntax highlighter)!
+
+```
+procedure Main() is
+begin
+    Print_Line("Hello, World!");
+end Main;
+```
+
 ## Just Think in Groups and Trees, its *that* easy!
 
 Rosario is heavily focused around groups (arrays, vectors, hashmaps, etc.) and tree structuring (variables that contain groups of other variables).
