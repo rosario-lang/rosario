@@ -6,16 +6,12 @@ version = 4
 name = "rosario"
 version = "0.1.0"
 dependencies = [
- "rosarioc",
  "rosarioparser",
 ]
 
 [[package]]
 name = "rosarioc"
 version = "0.1.0"
-dependencies = [
- "rosarioparser",
-]
 
 [[package]]
 name = "rosarioparser"

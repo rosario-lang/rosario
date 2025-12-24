@@ -141,10 +141,11 @@ pub struct Lexer {
     pub file_path: String,
     pub folder_path: String,
     pub file_name: String,
+    pub main_rosario_path: String,
 }
 
 impl Lexer {
-    pub fn from(input: Vec<u8>, path: String) -> Self {
+    pub fn from(input: Vec<u8>, path: String, main_rosario_path: Option<String>) -> Self {
         let path_as_path = Path::new(&path);
 
         // Yeah... I know...
@@ -156,6 +157,14 @@ impl Lexer {
             .unwrap()
             .to_string();
 
+        let file_name = path_as_path
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string()
+            .replace(".ros", "");
+
         let folder_path = path_as_path
             .canonicalize()
             .unwrap()
@@ -166,39 +175,40 @@ impl Lexer {
             .unwrap()
             .to_string();
 
-        let mut file_name = path_as_path
+        let folder_name = path_as_path
+            .canonicalize()
+            .unwrap()
+            .ancestors()
+            .nth(1)
+            .unwrap()
             .file_name()
             .unwrap()
             .to_str()
             .unwrap()
-            .to_string()
-            .replace(".ros", "");
+            .to_string();
 
-        if file_name == "module" {
-            file_name = Path::new(&folder_path)
-                .file_name()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .to_string();
-        }
+        let main_rosario_path = match main_rosario_path {
+            Some(p) => p + "::" + &folder_name,
+            None => folder_name,
+        };
 
         Self {
             input,
             file_path,
             folder_path,
             file_name,
+            main_rosario_path,
             ..Default::default()
         }
     }
 
-    pub fn from_file(path: &str) -> Self {
+    pub fn from_file(path: &str, main_rosario_path: Option<String>) -> Self {
         let content = match std::fs::read(path) {
             Ok(p) => p,
             Err(error) => panic!("Error at opening {:?}: {}", Path::new(path), error),
         };
 
-        Lexer::from(content, path.to_string())
+        Lexer::from(content, path.to_string(), main_rosario_path)
     }
 
     pub fn advance(&mut self) -> u8 {

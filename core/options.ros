@@ -21,7 +21,7 @@ implement Option<T>
         Some(value) => value,
     end Unwrap;
 
-    public function Mutable_Unwrap(mutable self) => mutable T is
+    public function Mutable_Unwrap(mutable &self) => mutable &T is
     match self is
         None => Panic("Option is `None`"),
         Some(value) => value,
